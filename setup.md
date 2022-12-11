@@ -18,9 +18,11 @@ Assuming that a PostgreSQL server is up and running, the next step is to load in
 
 # 3) Load the data
 
-Assuming that the games.csv file has been preprocessed, the PostgreSQL server is up and running, and the schema has been loaded, the final step is to load the actual data tables into the server. Use the following commands (still within the nba-games-data folder) to load the games and game_details data:
+Assuming that the games.csv file has been preprocessed, the PostgreSQL server is up and running, and the schema has been loaded, the final step is to load the actual data tables into the server. Use the following commands (still within the nba-games-data folder) to load the games and game_details data. Make sure game_loader.py and team_loader.py are run before game_detail_loader.py.
 
 `python3 game_loader.py | psql postgresql://localhost/postgres`
+
+`python3 team_loader.py | psql postgresql://localhost/postgres`
 
 `python3 game_detail_loader.py | psql postgresql://localhost/postgres`
 
@@ -55,7 +57,3 @@ After indexing, the query plan was changed to this, with the sequential scan thr
 Running the search again post-indexing, using "time," showed a significant speed improvement, with the new search time being almost a 1/4th of what it previously was, with times in the 0.022, 0.023, 0.025 range:
 
 ![screenshot](/screenshots/index3_indexSearch.png)
-
-
-
-

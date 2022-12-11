@@ -32,8 +32,8 @@ For these reasons, I have chosen a relational database was the best fit for this
 
 # Assessment:
 
-Now that the assignment is done, this group (of one) still feels that a relational database was the right choice. For the  envisioned use cases, tables and relational databases do indeed seem like the best option.
+Now that the assignment is done, this group (of one) still feels that a relational database was the right choice. For the envisioned use cases, tables and relational databases do indeed seem like the best option.
 
 # Schema:
 
-![schema](schema.png)
+![screenshot](/screenshots/schema.png)
