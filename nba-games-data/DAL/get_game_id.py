@@ -1,4 +1,4 @@
-import sys
+wimport sys
 
 from nba_dal import get_game_id
 
@@ -13,5 +13,6 @@ if len(result) == 0:
     print(f'No games match {game_id}.')
     exit(0)
 
-print(f'GameID: {result[0][1]} - {result[0][0]} - {result[0][2]}({result[0][6]}) at {result[1][2]}({result[0][7]})')
+for game in result:
+    print(f'GameID: {game[1]} on {game[0]}: {game[7]}({game[5]}) at {game[6]}({game[4]})')
 
