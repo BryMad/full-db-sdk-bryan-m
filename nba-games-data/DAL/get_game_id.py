@@ -1,4 +1,4 @@
-wimport sys
+import sys
 
 from nba_dal import get_game_id
 
