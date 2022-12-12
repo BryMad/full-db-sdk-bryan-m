@@ -26,7 +26,7 @@ def search_games_by_date(query, limit=100):
         return list(result)
 
 # Raw SQL-style implementation of a stats query.
-def search_details_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
+def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
     with db.connect() as connection:
         result_set = connection.execute(f"""
             SELECT game_date_est, player_name, pts, reb, ast, blk, stl FROM game INNER JOIN game_detail ON game.id = game_detail.game_id WHERE pts >= {pts} AND reb >= {reb} AND ast >= {ast} AND blk >= {blk} and stl >= {stl} ORDER by {order} DESC LIMIT {limit};
@@ -58,7 +58,7 @@ def search_game_id(team, season, location, limit=100):
         return list(result)
 
 # Raw SQL-style implementation of a Get-one-entity-by-ID function.
-def get_game_id(game_id, limit=100):
+def get_game_by_id(game_id, limit=100):
     with db.connect() as connection:
         result_set = connection.execute(f"""
             SELECT gam.game_date_est, 
@@ -208,19 +208,13 @@ def update_player_score(game_id, player_id, change_amount):
         current_session.close()         
 
 # ORM-style implementation of a rating query.
-def get_game_details(game_id, limit=100):
+def get_game_details_by_id(game_id, limit=100):
     query = current_session.query(GameDetail).\
         filter(GameDetail.game_id == game_id).\
         limit(limit)
     return query.all()
 
-
-def get_game_by_id_orm(game_id):
-    query = current_session.query(Game).\
-        filter(Game.id == game_id)
-    return query.all()
-
-def get_player_detail_orm(game_id, player_id):
+def get_player_detail(game_id, player_id):
     query = current_session.query(GameDetail).\
         filter(GameDetail.game_id == game_id).\
         filter(GameDetail.player_id == player_id)
