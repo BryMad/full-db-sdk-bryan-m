@@ -1,1 +1,0 @@
-SELECT game_date_est, player_name, pts, reb, ast, blk, stl FROM game INNER JOIN game_detail ON game.id = game_detail.game_id WHERE pts >= 30 AND reb >= 10 AND ast >= 10 AND blk >= 1 and stl >= 1 ORDER by pts DESC LIMIT 30;

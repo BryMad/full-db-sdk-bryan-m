@@ -16,20 +16,35 @@ game_table = Table('game', metadata, autoload=True)
 game_detail_table = Table('game_detail', metadata, autoload=True)
 
 
-# Raw SQL-style implementation of a game query.
-def search_games_by_date(query, limit=100):
-    with db.connect() as connection:
-        result_set = connection.execute(f"""
-            SELECT * FROM game WHERE game_date_est = '{query}' ORDER BY game_date_est LIMIT {limit}
-        """)
-        result = result_set.fetchall()
-        return list(result)
+# Featured Query Functions
 
-# Raw SQL-style implementation of a stats query.
+# Raw SQL-style implementation of a stats search query.
 def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
+    """
+    search_by_stat_combo takes an ordering criteria and a minimum desired value for any combination of the "big 5" 
+    game stats and returns the games and player who achieved at least this minimum combination of stats.
+
+    EXAMPLE: Return the game and players who have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game,
+    order the results by who scored the most points (in this example we don't care about steals, so steals should be set to 0)
+
+    PYTHON: search_by_stat_combo(pts, 30, 10, 10, 4, 0)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 search_by_stat_combo.py pts 30 10 10 4 0
+
+    :param str order: criteria to order results by, abbreviated version of stats (pts, reb, ast, blk, stl)  
+    :param int pts: minimum desired points
+    :param int reb: minimum desired rebounds
+    :param int ast: minimum desired assists
+    :param int blk: minimum desired blocks
+    :param int stl: minimum desired steals
+    :param int limit (optional): limit of how many results
+    :return: list of results
+    """
     with db.connect() as connection:
         result_set = connection.execute(f"""
-            SELECT game_date_est, player_name, pts, reb, ast, blk, stl FROM game INNER JOIN game_detail ON game.id = game_detail.game_id WHERE pts >= {pts} AND reb >= {reb} AND ast >= {ast} AND blk >= {blk} and stl >= {stl} ORDER by {order} DESC LIMIT {limit};
+            SELECT game_date_est, player_name, pts, reb, ast, blk, stl 
+            FROM game INNER JOIN game_detail ON game.id = game_detail.game_id 
+            WHERE pts >= {pts} AND reb >= {reb} AND ast >= {ast} AND blk >= {blk} and stl >= {stl} 
+            ORDER by {order} DESC LIMIT {limit};
         """)
         result = result_set.fetchall()
         return list(result)
@@ -37,28 +52,76 @@ def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
 
 # Raw SQL-style implementation of a stats counting query.
 def get_count_by_stat_combo(pts, reb, ast, blk, stl, limit=100):
+    """
+    get_count_by_stat_combo takes minimum desired value for any combination of the "big 5" game stats and returns a list of players and a count 
+    of how many times they have achieved this minimum combination of stats in a game, ordered by count descending.
+
+    EXAMPLE: Return the players and the count of game where players have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game.
+
+    PYTHON: get_count_by_stat_combo(30, 10, 10, 4, 0)    
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_count_by_stat_combo.py 30 10 10 4 0
+
+    :param int pts: minimum desired points
+    :param int reb: minimum desired rebounds
+    :param int ast: minimum desired assists
+    :param int blk: minimum desired blocks
+    :param int stl: minimum desired steals
+    :param int limit (optional): limit of how many results
+    :return: list of results
+    """
     with db.connect() as connection:
         result_set = connection.execute(f"""
             SELECT player_name, COUNT(*) 
             FROM game INNER JOIN game_detail ON game.id = game_detail.game_id 
-            WHERE pts >= {pts} AND reb >= {reb} AND ast >= {ast} AND blk >= {blk} AND stl >= {stl} GROUP BY player_name 
+            WHERE pts >= {pts} AND reb >= {reb} AND ast >= {ast} AND blk >= {blk} AND stl >= {stl} 
+            GROUP BY player_name 
             ORDER BY count DESC;
         """)
         result = result_set.fetchall()
         return list(result)
 
 
-# Raw SQL-style implementation of a user readable search function.
-def search_game_id(team, season, location, limit=100):
+# Full-Cycle CRUD for For Game Entity
+
+# CRUD User-readable search function to retrieve Game ID's.
+def search_game_id(team, season, limit=100):
+    """
+    search_game_id takes a team and a season start year and returns the dates and game ids of all games from 
+    the desired season, ordered by date ascending .
+
+    EXAMPLE: Return the games and game ids of the Mavericks' 2019-2020 season.
+
+    PYTHON: search_game_id(Mavericks, 2019)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 search_game_id.py Mavericks 2019
+
+    :param str team: team name minimum desired points
+    :param int season: start year of season=
+    :param int limit (optional): limit of how many results
+    :return: list of results
+    """
     with db.connect() as connection:
         result_set = connection.execute(f"""
-            SELECT game_date_est, game.id, nickname FROM game INNER JOIN team ON game.{location}_team_id = team.id WHERE nickname ILIKE '{team}' AND season = {season} LIMIT {limit};
+            SELECT game_date_est, game.id, nickname 
+            FROM game INNER JOIN team ON game.visitor_team_id = team.id OR game.home_team_id = team.id 
+            WHERE nickname ILIKE '{team}' AND season = {season} 
+            ORDER by game_date_est LIMIT {limit};;
         """)
         result = result_set.fetchall()
         return list(result)
 
-# Raw SQL-style implementation of a Get-one-entity-by-ID function.
+# CRUD Get-one-Game-by-ID function.
 def get_game_by_id(game_id, limit=100):
+    """
+    get_game_by_id takes a game_id returns the basic information of game (date, teams, and score).
+
+    EXAMPLE: Return the basic information for game 22101005.
+
+    PYTHON: get_game_by_id(22101005)
+    DB_URL=postgresql://localhost/postgres python3 get_game_by_id.py 22101005
+
+    :param int game_id: id of the game whose information we wish to retrieve
+    :return: single game information
+    """
     with db.connect() as connection:
         result_set = connection.execute(f"""
             SELECT gam.game_date_est, 
@@ -80,14 +143,24 @@ def get_game_by_id(game_id, limit=100):
         result = result_set.fetchall()
         return list(result)
 
-# Raw SQL-style implementation of a delete function.
+# CRUD Delete function.
 def delete_game(game_id):
+    """
+    delete_game takes a game_id and deletes the game from the database.
+
+    EXAMPLE: Return the basic information for game 22101005.
+
+    PYTHON: get_game_by_id(22101005)
+    DB_URL=postgresql://localhost/postgres python3 get_game_by_id.py 22101005
+
+    :param int game_id: id of the game whose information we wish to retrieve
+    :return: single game information
+    """
+    
     with db.connect() as connection:
         result_set = connection.execute(f"""
-            DELETE FROM game WHERE id = {game_id};
+            DELETE FROM game WHERE id = {game_id} CASCADE;
         """)
-  #      result = result_set.fetchall()
-#     return list(result)
 
 
 # For ORM-style implementations, we need to define a few things first.
@@ -141,25 +214,10 @@ class GameDetail(ORM_Base):
     pts = Column(Integer)
     plus_minus = Column(Integer)
 
-
-
-
-# The notion of a Session is a multifaceted one whose usage and implementation may change depending on the type
-# of application that is using this DAL (particularly, a standalone application vs. a web service). It is implemented
-# here in the simplest possible way. Note that if this DAL is to be used in other contexts, code surrounding sessions
-# may have to change.
-#
-# At a minimum, we follow the basic SQLAlchemy rule that sessions should be external to the functions that use them.
-# Thus, we define current_session at this upper level, and not within each function.
 Session = sessionmaker(bind=db)
 current_session = Session()
 
-#def update_game(new away )
-# might have to close session then reopen
-
-
-# ORM-style implementation of a creation function for creating new game entry
-#Creation function
+# Creation function
 def add_game(game_date_est, home_team_id, visitor_team_id, pts_home, pts_away):
     game = Game(game_date_est=game_date_est, home_team_id=home_team_id, visitor_team_id=visitor_team_id, pts_home=pts_home, pts_away=pts_away)
     current_session.add(game)
