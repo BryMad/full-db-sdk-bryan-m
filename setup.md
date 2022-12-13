@@ -18,7 +18,7 @@ Assuming that a PostgreSQL server is up and running, the next step is to load in
 
 # 3) Load the data
 
-Assuming that the games.csv file has been preprocessed, the PostgreSQL server is up and running, and the schema has been loaded, the final step is to load the actual data tables into the server. Use the following commands (still within the nba-games-data folder) to load the games and game_details data. Make sure game_loader.py and team_loader.py are run before game_detail_loader.py.
+Assuming that the games.csv file has been preprocessed, the PostgreSQL server is up and running, and the schema has been loaded, the final step is to load the actual data tables into the server. Use the following commands (still within the nba-games-data folder) to load games, game_details, and teams data. Make sure game_loader.py and team_loader.py are run before game_detail_loader.py.
 
 `python3 game_loader.py | psql postgresql://localhost/postgres`
 
@@ -30,7 +30,7 @@ Assuming that the games.csv file has been preprocessed, the PostgreSQL server is
 
 A centerpiece query of the DAL is search_details_by_stat_combo, a search that can return a customized, ranked list of player performances based on a minimum desired combo of stats. (eg "Find the players who have had at least 30 points, 10 rebounds, 10 assists, 1 steal, and 1 block in a game").
 
-After inputting the parameters via the DAL, this is how the search would look being fed into Postgres:
+After parsing the parameters via the DAL, this is how a potential search would look being fed into Postgres:
 
 SELECT game_date_est, player_name, pts, reb, ast, blk, stl FROM game INNER JOIN game_detail ON game.id = game_detail.game_id WHERE pts >= 30 AND reb >= 10 AND ast >= 10 AND blk >= 1 and stl >= 1 ORDER by pts DESC LIMIT 100;
 

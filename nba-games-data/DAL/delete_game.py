@@ -7,8 +7,9 @@ if len(sys.argv) != 2:
     exit(1)
 
 game_id = sys.argv[1]
+
 try:
     game = delete_game(game_id)
     print(f'Delete Succesful')
-except ValueError:
-    print(f'Sorry, something went wrong. Please ensure that {game_id} is a valid game id.')
+except:
+    print(f'Sorry, something went wrong. Please ensure that {game_id} is a valid game id or that it\'s associated game_details have been deleted.')

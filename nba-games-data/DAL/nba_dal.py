@@ -21,7 +21,7 @@ game_detail_table = Table('game_detail', metadata, autoload=True)
 # Raw SQL-style implementation of a stats search query.
 def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
     """
-    search_by_stat_combo takes an ordering criteria and a minimum desired value for any combination of the "big 5" 
+    search_by_stat_combo() takes an ordering criteria and a minimum desired value for any combination of the "big 5" 
     game stats and returns the games and player who achieved at least this minimum combination of stats.
 
     EXAMPLE: Return the game and players who have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game,
@@ -53,7 +53,7 @@ def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
 # Raw SQL-style implementation of a stats counting query.
 def get_count_by_stat_combo(pts, reb, ast, blk, stl, limit=100):
     """
-    get_count_by_stat_combo takes minimum desired value for any combination of the "big 5" game stats and returns a list of players and a count 
+    get_count_by_stat_combo() takes minimum desired value for any combination of the "big 5" game stats and returns a list of players and a count 
     of how many times they have achieved this minimum combination of stats in a game, ordered by count descending.
 
     EXAMPLE: Return the players and the count of game where players have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game.
@@ -83,10 +83,10 @@ def get_count_by_stat_combo(pts, reb, ast, blk, stl, limit=100):
 
 # Full-Cycle CRUD for For Game Entity
 
-# CRUD User-readable search function to retrieve Game ID's.
+# CRUD User-readable search function to retrieve game ID's.
 def search_game_id(team, season, limit=100):
     """
-    search_game_id takes a team and a season start year and returns the dates and game ids of all games from 
+    search_game_id() takes a team and a season start year and returns the dates and game ids of all games from 
     the desired season, ordered by date ascending .
 
     EXAMPLE: Return the games and game ids of the Mavericks' 2019-2020 season.
@@ -112,12 +112,12 @@ def search_game_id(team, season, limit=100):
 # CRUD Get-one-Game-by-ID function.
 def get_game_by_id(game_id, limit=100):
     """
-    get_game_by_id takes a game_id returns the basic information of game (date, teams, and score).
+    get_game_by_id() takes a game_id returns the basic information of game (date, teams, and score).
 
     EXAMPLE: Return the basic information for game 22101005.
 
     PYTHON: get_game_by_id(22101005)
-    DB_URL=postgresql://localhost/postgres python3 get_game_by_id.py 22101005
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_game_by_id.py 22101005
 
     :param int game_id: id of the game whose information we wish to retrieve
     :return: single game information
@@ -143,29 +143,72 @@ def get_game_by_id(game_id, limit=100):
         result = result_set.fetchall()
         return list(result)
 
-# CRUD Delete function.
-def delete_game(game_id):
+# CRUD Delete function part 1.
+def delete_game_details(game_id):
     """
-    delete_game takes a game_id and deletes the game from the database.
+    delete_game_details() takes a game_id and deletes the associated game_details from the database. Must be performed before
+    delete_game, since game_details.game_id is a foreign key constraint on "game_detail." (know this is kind of a workaround 
+    and might be better served by a transaction, but already doing a transaction for Updating and had issues 
+    getting this to work as a transaction as well).
 
-    EXAMPLE: Return the basic information for game 22101005.
+    EXAMPLE: Delete the game_details associated with game 22101005 from the database.
 
-    PYTHON: get_game_by_id(22101005)
-    DB_URL=postgresql://localhost/postgres python3 get_game_by_id.py 22101005
+    PYTHON: delete_game_details(22101005)
+    DB_URL=postgresql://localhost/postgres python3 delete_game_details.py 22101005
 
-    :param int game_id: id of the game whose information we wish to retrieve
-    :return: single game information
+    :param int game_id: id of the game whose information we wish to delete game_details for
+    :return: message whether operation was sucessful
     """
     
     with db.connect() as connection:
         result_set = connection.execute(f"""
-            DELETE FROM game WHERE id = {game_id} CASCADE;
+            DELETE FROM game_detail WHERE game_id = {game_id};
         """)
 
+# CRUD Delete function part 2.
+def delete_game(game_id):
+    """
+    delete_game() takes a game_id and deletes the associated game from the database. Should be run after delete_game_details to ensure game_details associated 
+    with the game_id have been deleted to prevent key constraint errors.
 
-# For ORM-style implementations, we need to define a few things first.
+    EXAMPLE: Delete game 22101005 from the database.
+
+    PYTHON: delete_game(22101005)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 delete_game.py 22101005
+
+    :param int game_id: id of the game whose information we wish to delete
+    :return: message saying whether operation was succesful
+    """
+    
+    with db.connect() as connection:
+        result_set = connection.execute(f"""
+            DELETE FROM game WHERE id = {game_id};
+        """)
+
+# User-readable search function to retrieve team IDs
+def get_team_id(team_name):
+    """
+    get_team_id() takes a team name returns that team's team.id number
+
+    EXAMPLE: Get the Celtics team.id.
+
+    PYTHON: get_team_id(Celtics)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_team_id Celtics
+
+    :param str team: team name
+    :return: team.id number
+    """
+    with db.connect() as connection:
+        result_set = connection.execute(f"""
+            SELECT id 
+            FROM team
+            WHERE nickname ILIKE '{team_name}'
+        """)
+        result = result_set.fetchall()
+        return list(result)
+
+# ORM setup for remaining CRUD functions
 ORM_Base = declarative_base()
-
 
 class Game(ORM_Base):
     __tablename__ = 'game'
@@ -217,14 +260,60 @@ class GameDetail(ORM_Base):
 Session = sessionmaker(bind=db)
 current_session = Session()
 
-# Creation function
-def add_game(game_date_est, home_team_id, visitor_team_id, pts_home, pts_away):
+# CRUD creation function
+def add_game(game_date_est, home_team, visitor_team, pts_home, pts_away):
+    """
+    add_game creates a new game in the database based on user inputted values.
+
+    TODO EXAMPLE: Create a new game bet from the database.
+
+    TODO PYTHON: delete_game(22101005)
+    TODO COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 delete_game.py 22101005
+
+    TODO :param int game_id: id of the game whose information we wish to delete
+    TODO :return: message saying whether operation was succesful
+    """
+    home_team_id = get_team_id(home_team)[0][0]
+    visitor_team_id = get_team_id(visitor_team)[0][0]
     game = Game(game_date_est=game_date_est, home_team_id=home_team_id, visitor_team_id=visitor_team_id, pts_home=pts_home, pts_away=pts_away)
     current_session.add(game)
     current_session.commit() # Make the change permanent.
     return game
 
+# User-readable search function to retrieve Player IDs
+def get_game_details_by_id(game_id, limit=100):
+    """
+    get_player_detail() takes a game_id and returns game_details for the associated game, including player_ids that can be used in the 
+    update_player_score() function below.
+
+    EXAMPLE: get game details (including player_ids) for game_id 22101005
+
+    PYTHON: get_game_details_by_id(22101005)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_game_details_by_id.py 22101005
+
+    :param int game_id: id of the game whose game_details we wish to retrieve
+    :return: list of game_details with desired information
+    """
+    query = current_session.query(GameDetail).\
+        filter(GameDetail.game_id == game_id).\
+        limit(limit)
+    return query.all()
+
+# CRUD Update Function + Required Transaction
 def update_player_score(game_id, player_id, change_amount):
+    """
+    update_player_score() takes a game_id, a player_id, and a change amount, and updates a player's individual game_detail score as well
+    as adjusting game's overall score. For help retrieving player_ids.
+
+    EXAMPLE: The NBA has reviewed game 22101008 and determined Khris Middleton's shot that was recorded as a 2 pointer was actually a 3 pointer. 
+    Update his game_detail stats and the Buck's game entry score, adding 1 point to each to reflect these point changes.
+
+    PYTHON: update_player_score(22101008, 203114, 1)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 update_player_score.py 22101008 203114 1
+
+    :param int game_id: id of the game whose information we wish to delete
+    :return: message saying whether operation was succesful
+    """
     try:
         # first query.  a Connection is acquired
         # from the Engine, and a Transaction
@@ -265,15 +354,3 @@ def update_player_score(game_id, player_id, change_amount):
         # invalid state is removed.
         current_session.close()         
 
-# ORM-style implementation of a rating query.
-def get_game_details_by_id(game_id, limit=100):
-    query = current_session.query(GameDetail).\
-        filter(GameDetail.game_id == game_id).\
-        limit(limit)
-    return query.all()
-
-def get_player_detail(game_id, player_id):
-    query = current_session.query(GameDetail).\
-        filter(GameDetail.game_id == game_id).\
-        filter(GameDetail.player_id == player_id)
-    return query.all()

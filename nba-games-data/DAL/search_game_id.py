@@ -3,7 +3,7 @@ import sys
 from nba_dal import search_game_id
 
 if len(sys.argv) != 3:
-    print('Usage: get_game_id <team_name> <season_start_year> <home or visitor>')
+    print('Usage: get_game_id <team_name> <season_start_year>')
     exit(1)
 
 team = sys.argv[1]

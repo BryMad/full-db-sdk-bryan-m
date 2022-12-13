@@ -1,0 +1,1 @@
+Bryan Madole really pulled his weight in this group and did all the work for these assignments. He may need extensions now and then, and he may ask Dondi too many questions over Slack, but overall what a guy and what a great group partner. We were lucky to have him as part of our group on this project.
