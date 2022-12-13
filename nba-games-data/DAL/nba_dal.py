@@ -25,7 +25,7 @@ def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
     game stats and returns the games and player who achieved at least this minimum combination of stats.
 
     EXAMPLE: Return the game and players who have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game,
-    order the results by who scored the most points (in this example we don't care about steals, so steals should be set to 0)
+    order the results by who scored the most points (in this example, we don't care about steals, so steals should be set to 0)
 
     PYTHON: search_by_stat_combo(pts, 30, 10, 10, 4, 0)
     COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 search_by_stat_combo.py pts 30 10 10 4 0
@@ -51,12 +51,12 @@ def search_by_stat_combo(order, pts, reb, ast, blk, stl, limit=100):
 
 
 # Raw SQL-style implementation of a stats counting query.
-def get_count_by_stat_combo(pts, reb, ast, blk, stl, limit=100):
+def get_count_by_stat_combo(pts, reb, ast, blk, stl):
     """
     get_count_by_stat_combo() takes minimum desired value for any combination of the "big 5" game stats and returns a list of players and a count 
     of how many times they have achieved this minimum combination of stats in a game, ordered by count descending.
 
-    EXAMPLE: Return the players and the count of game where players have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game.
+    EXAMPLE: Return the players and the count of games where players have had at least 30 points, 10 rebounds, 10 assists, and 4 blocks in a game.
 
     PYTHON: get_count_by_stat_combo(30, 10, 10, 4, 0)    
     COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_count_by_stat_combo.py 30 10 10 4 0
@@ -66,7 +66,6 @@ def get_count_by_stat_combo(pts, reb, ast, blk, stl, limit=100):
     :param int ast: minimum desired assists
     :param int blk: minimum desired blocks
     :param int stl: minimum desired steals
-    :param int limit (optional): limit of how many results
     :return: list of results
     """
     with db.connect() as connection:
@@ -110,7 +109,7 @@ def search_game_id(team, season, limit=100):
         return list(result)
 
 # CRUD Get-one-Game-by-ID function.
-def get_game_by_id(game_id, limit=100):
+def get_game_by_id(game_id):
     """
     get_game_by_id() takes a game_id returns the basic information of game (date, teams, and score).
 
@@ -154,7 +153,7 @@ def delete_game_details(game_id):
     EXAMPLE: Delete the game_details associated with game 22101005 from the database.
 
     PYTHON: delete_game_details(22101005)
-    DB_URL=postgresql://localhost/postgres python3 delete_game_details.py 22101005
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 delete_game_details.py 22101005
 
     :param int game_id: id of the game whose information we wish to delete game_details for
     :return: message whether operation was sucessful
@@ -193,7 +192,7 @@ def get_team_id(team_name):
     EXAMPLE: Get the Celtics team.id.
 
     PYTHON: get_team_id(Celtics)
-    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_team_id Celtics
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 get_team_id.py Celtics
 
     :param str team: team name
     :return: team.id number
@@ -261,17 +260,22 @@ Session = sessionmaker(bind=db)
 current_session = Session()
 
 # CRUD creation function
-def add_game(game_date_est, home_team, visitor_team, pts_home, pts_away):
+def add_game(game_date_est, home_team, pts_home, visitor_team, pts_away):
     """
     add_game creates a new game in the database based on user inputted values.
 
-    TODO EXAMPLE: Create a new game bet from the database.
+    EXAMPLE: Create a (fictitious) game between the Mavericks at the Suns that took place on 2022-12-01 where the glorious Mavericks broke
+    all existing NBA records to score 300 points and the pitiful Suns only scored 20 points.
 
-    TODO PYTHON: delete_game(22101005)
-    TODO COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 delete_game.py 22101005
+    PYTHON: add_game(2022-12-01, Suns, 20, Mavericks, 300)
+    COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 add_game.py 2022-12-01, Suns 20 Mavericks 300
 
-    TODO :param int game_id: id of the game whose information we wish to delete
-    TODO :return: message saying whether operation was succesful
+    :param str game_date_est: date of game in yyyy-mm-dd format
+    :param str home_team: home team name
+    :param int pts_home: points scored by home team
+    :param visitor_team: visitor team name
+    :param int pts_away: points scored by away team
+    :return: message saying whether operation was succesful
     """
     home_team_id = get_team_id(home_team)[0][0]
     visitor_team_id = get_team_id(visitor_team)[0][0]
@@ -311,7 +315,9 @@ def update_player_score(game_id, player_id, change_amount):
     PYTHON: update_player_score(22101008, 203114, 1)
     COMMAND LINE: DB_URL=postgresql://localhost/postgres python3 update_player_score.py 22101008 203114 1
 
-    :param int game_id: id of the game whose information we wish to delete
+    :param int game_id: id of the game to update
+    :param int player_id: id of the player whose points need updating
+    :param int change_amount: amount of points to add (or subtract if negative number given)
     :return: message saying whether operation was succesful
     """
     try:
