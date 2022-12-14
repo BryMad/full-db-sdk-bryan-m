@@ -37,3 +37,9 @@ Now that the assignment is done, this group (of one) still feels that a relation
 # Schema:
 
 ![screenshot](/screenshots/schema.png)
+
+# Tutorial Video Link
+
+Tutorial Video on Natural Join:
+
+[dropbox video tutorial](https://www.dropbox.com/s/p9kooddwla5vlyh/Natural%20Join.mov?dl=0)
