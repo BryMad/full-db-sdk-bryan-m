@@ -10,3 +10,4 @@ node_modules/
 import.report
 movies.csv
 viewers.csv
+.DS_Store
